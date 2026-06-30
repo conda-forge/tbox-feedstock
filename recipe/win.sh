@@ -36,6 +36,30 @@ sed -i 's/-fPIC//g' Makefile
 make tbox -j"${CPU_COUNT:-1}"
 
 BUILD_DIR="build/mingw/x86_64/release"
+OBJ_DIR="build/.objs/tbox/mingw/x86_64/release"
+DEF_FILE="${BUILD_DIR}/tbox.def"
+
+# The legacy configure/gmake generator does not apply the export-all rule from
+# TBox's xmake.lua, producing a DLL with no exported symbols. Generate the
+# module definition file from the compiled objects and relink the DLL.
+{
+    echo "EXPORTS"
+    find "${OBJ_DIR}" -name '*.obj' -exec llvm-nm --defined-only --extern-only {} + \
+        | awk '$2 ~ /^[TDBR]$/ && $3 ~ /^tb_/ { print $3 }' \
+        | sort -u
+} > "${DEF_FILE}"
+
+grep -q '^tb_exit$' "${DEF_FILE}"
+grep -q '^tb_md5_init$' "${DEF_FILE}"
+grep -q '^tb_charset_conv_data$' "${DEF_FILE}"
+
+sed -i "s|^tbox_shflags=|tbox_shflags= -Wl,/def:${DEF_FILE} |" Makefile
+touch src/tbox/tbox.c
+make tbox -j"${CPU_COUNT:-1}"
+
+llvm-readobj --coff-exports "${BUILD_DIR}/tbox.dll" | grep -q 'Name: tb_exit'
+llvm-readobj --coff-exports "${BUILD_DIR}/tbox.dll" | grep -q 'Name: tb_md5_init'
+llvm-readobj --coff-exports "${BUILD_DIR}/tbox.dll" | grep -q 'Name: tb_charset_conv_data'
 
 install -Dm755 "${BUILD_DIR}/tbox.dll" "${PREFIX}/bin/tbox.dll"
 install -Dm644 "${BUILD_DIR}/tbox.lib" "${PREFIX}/lib/tbox.lib"
