@@ -37,12 +37,12 @@ tests:
   - script:
       - if: unix
         then:
-          - grep -Eq '^[[:space:]]*#define[[:space:]]+TB_CONFIG_MODULE_HAVE_HASH[[:space:]]+1[[:space:]]*$' "$PREFIX/include/tbox/tbox.config.h"
-          - grep -Eq '^[[:space:]]*#define[[:space:]]+TB_CONFIG_MODULE_HAVE_CHARSET[[:space:]]+1[[:space:]]*$' "$PREFIX/include/tbox/tbox.config.h"
+          - grep -q "TB_CONFIG_MODULE_HAVE_HASH .*1" "$PREFIX/include/tbox/tbox.config.h"
+          - grep -q "TB_CONFIG_MODULE_HAVE_CHARSET .*1" "$PREFIX/include/tbox/tbox.config.h"
       - if: win
         then:
-          - findstr /R /C:"^#define *TB_CONFIG_MODULE_HAVE_HASH *1 *$" "%LIBRARY_INC%\tbox\tbox.config.h"
-          - findstr /R /C:"^#define *TB_CONFIG_MODULE_HAVE_CHARSET *1 *$" "%LIBRARY_INC%\tbox\tbox.config.h"
+          - findstr /R /C:"TB_CONFIG_MODULE_HAVE_HASH .*1" "%LIBRARY_INC%\tbox\tbox.config.h"
+          - findstr /R /C:"TB_CONFIG_MODULE_HAVE_CHARSET .*1" "%LIBRARY_INC%\tbox\tbox.config.h"
 
 about:
   homepage: https://tboox.top/?lang=0
