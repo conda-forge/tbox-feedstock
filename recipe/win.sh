@@ -42,16 +42,26 @@ DEF_FILE="${BUILD_DIR}/tbox.def"
 # The legacy configure/gmake generator does not apply the export-all rule from
 # TBox's xmake.lua, producing a DLL with no exported symbols. Generate the
 # module definition file from the compiled objects and relink the DLL.
+#
+# nm type letters map to .def entries as follows:
+#   T, W           -> code symbol, exported by name
+#   D, B, R, C, V  -> data symbol, exported with the DATA keyword so the import
+#                     library references the variable itself rather than a thunk
+# TBox has no public/internal naming convention, so every external tb_* symbol
+# is exported — this matches upstream's xmake export-all rule.
 {
     echo "EXPORTS"
     find "${OBJ_DIR}" -name '*.obj' -exec llvm-nm --defined-only --extern-only {} + \
-        | awk '$2 ~ /^[TDBR]$/ && $3 ~ /^tb_/ { print $3 }' \
+        | awk '$3 ~ /^tb_/ {
+                   if ($2 == "T" || $2 == "W") print $3;
+                   else if ($2 ~ /^[DBRCV]$/) print $3 " DATA";
+               }' \
         | sort -u
 } > "${DEF_FILE}"
 
-grep -q '^tb_exit$' "${DEF_FILE}"
-grep -q '^tb_md5_init$' "${DEF_FILE}"
-grep -q '^tb_charset_conv_data$' "${DEF_FILE}"
+grep -qE '^tb_exit( DATA)?$' "${DEF_FILE}"
+grep -qE '^tb_md5_init( DATA)?$' "${DEF_FILE}"
+grep -qE '^tb_charset_conv_data( DATA)?$' "${DEF_FILE}"
 
 sed -i "s|^tbox_shflags=|tbox_shflags= -Wl,/def:${DEF_FILE} |" Makefile
 touch src/tbox/tbox.c
