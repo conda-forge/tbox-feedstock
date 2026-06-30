@@ -88,10 +88,18 @@ if [ -n "${missing}" ]; then
     exit 1
 fi
 
-# lld-link wrote the import library via /implib; sanity-check it exists and is a
-# real COFF import library (no .dll.a is shipped).
+# lld-link wrote the import library via /implib; confirm it references the
+# exports. Run nm into a file so its exit status (it may warn on short-import
+# members) cannot trip `set -o pipefail`, and match the thunk or __imp_ symbol.
 test -f "${BUILD_DIR}/tbox.lib"
-llvm-nm "${BUILD_DIR}/tbox.lib" | grep -q '__imp_tb_exit'
+llvm-nm "${BUILD_DIR}/tbox.lib" > "${BUILD_DIR}/tbox.lib.syms" 2>&1 || true
+if ! grep -q 'tb_exit' "${BUILD_DIR}/tbox.lib.syms"; then
+    echo "ERROR: import library tbox.lib does not reference tb_exit" >&2
+    ls -la "${BUILD_DIR}/tbox.lib" >&2
+    echo "----- llvm-nm tbox.lib (head) -----" >&2
+    head -n 40 "${BUILD_DIR}/tbox.lib.syms" >&2
+    exit 1
+fi
 
 install -Dm755 "${BUILD_DIR}/tbox.dll" "${PREFIX}/bin/tbox.dll"
 install -Dm644 "${BUILD_DIR}/tbox.lib" "${PREFIX}/lib/tbox.lib"
