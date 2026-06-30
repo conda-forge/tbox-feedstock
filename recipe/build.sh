@@ -16,7 +16,12 @@ else
     sed -i 's/        c++) toolname="gxx";;/        *-c++) toolname="gxx";;\n        c++) toolname="gxx";;/' configure
 fi
 
-./configure --generator=ninja --kind=shared --prefix="${PREFIX}"
+./configure \
+    --generator=ninja \
+    --kind=shared \
+    --hash=y \
+    --charset=y \
+    --prefix="${PREFIX}"
 
 if [[ "$(uname)" == "Darwin" ]]; then
     # Fix build.ninja: xcodebuild stderr warnings (DVTSDK: Skipped SDK...) leak
