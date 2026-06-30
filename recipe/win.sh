@@ -23,7 +23,12 @@ sed -i 's/add_syslinks "ws2_32" "pthread" "m"/add_syslinks "ws2_32" "user32"/' s
 # Do not append "lib" prefix to library names on Windows, as MSVC does not use it
 sed -i 's/^[[:space:]]*prefixname="lib"/prefixname=""/' configure
 
-./configure --generator=gmake --kind=shared --prefix="${PREFIX}"
+./configure \
+    --generator=gmake \
+    --kind=shared \
+    --hash=y \
+    --charset=y \
+    --prefix="${PREFIX}"
 
 # Remove -fPIC from generated Makefile — unsupported on Windows MSVC target
 sed -i 's/-fPIC//g' Makefile
@@ -37,3 +42,5 @@ install -Dm644 "${BUILD_DIR}/tbox.lib" "${PREFIX}/lib/tbox.lib"
 
 mkdir -p "${PREFIX}/include"
 cp -r src/tbox "${PREFIX}/include/"
+
+install -Dm644 "${BUILD_DIR}/tbox.config.h" "${PREFIX}/include/tbox/tbox.config.h"
