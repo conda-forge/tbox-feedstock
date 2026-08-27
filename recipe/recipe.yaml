@@ -10,9 +10,10 @@ source:
   sha256: 8601bd1443ad3e3eb998406a71c3896f8563ed1aeb94a9ccf8c17543742d508e
   patches:
     - 0001-honor-macosx-deployment-target.patch
+    - 0002-windows-stdfile-redirect.patch
 
 build:
-  number: 0
+  number: 1
 
 requirements:
   run_exports:
